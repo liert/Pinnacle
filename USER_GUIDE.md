@@ -1,31 +1,33 @@
-# Pinnacle User Guide
+# Pinnacle 用户指南
 
-This guide is for humans using Pinnacle from a terminal.
+语言：中文 | [English](USER_GUIDE.en.md)
 
-## What Pinnacle Does
+这份文档面向从终端使用 Pinnacle 的用户。
 
-Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
+## Pinnacle 做什么
 
-- Find imported functions such as `malloc`, `fopen`, or `unlink` through PLT entries.
-- Generate AArch64 calls to those functions.
-- Assemble custom hook code.
-- Place hook code in an executable code cave and branch to it from the target address.
+Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它可以：
 
-## Recommended Workflow
+- 通过 PLT 入口查找 `malloc`、`fopen`、`unlink` 等导入函数。
+- 生成调用这些函数的 AArch64 汇编。
+- 汇编自定义 hook 代码。
+- 在可执行 code cave 中放置 payload，并从目标地址跳转到 payload。
 
-1. Inspect imports:
+## 推荐流程
+
+1. 查看导入函数：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli list-imports target.elf
 ```
 
-2. Inspect local symbols:
+2. 查看本地函数符号：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli list-symbols target.elf
 ```
 
-3. Run a dry-run patch:
+3. 先执行 dry-run：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli inject `
@@ -38,7 +40,7 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
   --dry-run
 ```
 
-4. If the plan looks correct, write the patched file:
+4. 确认计划无误后写出补丁文件：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli inject `
@@ -51,25 +53,25 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
   --return-mode none
 ```
 
-## Important Options
+## 重要参数
 
-- `--input`: input ELF file.
-- `--output`: patched output file.
-- `--addr`: virtual address to patch.
-- `--call`: function name to call.
-- `--prefer imported`: prefer imported PLT functions.
-- `--asm`: custom assembly template.
-- `--strategy trampoline`: branch from the target address to a payload in a code cave.
-- `--mode minimal`: wrap payload with a small prologue and epilogue.
-- `--mode raw`: do not wrap the payload; the assembly file is responsible for prologue and epilogue.
-- `--return-mode jump`: append a branch back to the original flow.
-- `--return-mode ret`: append `ret`.
-- `--return-mode none`: append nothing.
-- `--dry-run`: print the patch plan without writing a file.
+- `--input`：输入 ELF。
+- `--output`：输出 patched ELF。
+- `--addr`：需要 patch 的虚拟地址。
+- `--call`：要调用的函数名。
+- `--prefer imported`：优先使用导入函数 PLT。
+- `--asm`：自定义汇编模板文件。
+- `--strategy trampoline`：从目标地址跳到 code cave 中的 payload。
+- `--mode minimal`：由工具包一层较小的函数头和函数尾。
+- `--mode raw`：工具不包装 payload，汇编文件自己负责函数头和函数尾。
+- `--return-mode jump`：payload 末尾跳回原流程。
+- `--return-mode ret`：payload 末尾追加 `ret`。
+- `--return-mode none`：payload 末尾不追加任何内容。
+- `--dry-run`：只打印 patch 计划，不写文件。
 
-## Function-Shaped Hooks for IDA
+## 让 IDA 更容易识别 payload 为函数
 
-If you want IDA to recognize the payload more easily, use an assembly file that starts and ends like a normal function:
+如果希望 IDA 更容易识别 code cave 中的 payload，可以让汇编文件自己写成标准函数形态：
 
 ```asm
 stp x29, x30, [sp, #-16]!
@@ -79,36 +81,34 @@ ldp x29, x30, [sp], #16
 ret
 ```
 
-Then inject with:
+注入时使用：
 
 ```powershell
 --mode raw --return-mode none
 ```
 
-## Example Assembly
+## 示例汇编
 
-The repository includes:
+仓库提供了一个可公开的通用示例：
 
 ```text
 examples/call_import_malloc.asm
 ```
 
-It calls the imported `malloc` function with a fixed size and returns the result in `x0`. It is intentionally generic so it can be published with the repository.
+它调用导入函数 `malloc(16)`，并将返回值保留在 `x0`。项目特定的 hook payload 建议放在本地忽略目录，例如 `hooks/`。
 
-Project-specific hook payloads should stay in a local ignored directory such as `hooks/`.
+## 常见问题
 
-## Troubleshooting
-
-If a dependency is missing, install:
+如果缺少依赖：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-If no code cave is found, pass an explicit executable payload address:
+如果找不到 code cave，可以手动指定一个可执行 payload 地址：
 
 ```powershell
 --payload-addr 0x430c48
 ```
 
-If `trampoline` refuses a patch, the overwritten instruction may be PC-relative. Choose a different address or use a strategy appropriate for your target.
+如果 `trampoline` 拒绝 patch，通常是被覆盖指令中包含 PC-relative 指令。可以换一个地址，或选择更适合目标位置的注入策略。

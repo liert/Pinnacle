@@ -1,47 +1,51 @@
 # Pinnacle
 
-Pinnacle is a Python toolkit for planning and applying AArch64 ELF call-injection patches. It resolves existing functions from ELF symbols and imported PLT entries, assembles AArch64 payloads, and patches a target address using overwrite or trampoline strategies.
+语言：中文 | [English](README.en.md)
 
-The tool runs on Windows and Linux. The first supported target format is AArch64 Linux ELF.
+Pinnacle 是一个 Python 工具，用于规划和应用 AArch64 ELF 调用注入补丁。它可以从 ELF 符号和导入函数 PLT 入口解析已有函数，生成 AArch64 payload，并通过 overwrite 或 trampoline 策略 patch 指定地址。
 
-## Features
+工具本身支持在 Windows 和 Linux 上运行。第一版目标文件格式为 AArch64 Linux ELF。
 
-- LIEF-based ELF parsing and writing.
-- Imported function resolution through PLT entries.
-- AArch64 assembly with Keystone.
-- Patch verification with Capstone.
-- User assembly templates with helper pseudo-instructions.
-- Trampoline patches with code-cave payload placement.
+## 功能
 
-## Install
+- 基于 LIEF 解析和写回 ELF。
+- 解析导入函数对应的 PLT 入口。
+- 使用 Keystone 汇编 AArch64 代码。
+- 使用 Capstone 验证补丁反汇编。
+- 支持带伪指令的自定义汇编模板。
+- 支持 trampoline 注入，并自动寻找可执行 code cave。
+
+## 安装
+
+Windows PowerShell：
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-On Linux/macOS shells:
+Linux/macOS shell：
 
 ```bash
 python3 -m venv .venv
 ./.venv/bin/python -m pip install -r requirements.txt
 ```
 
-## Basic Usage
+## 基本用法
 
-List imported PLT functions:
+查看目标 ELF 的导入函数 PLT：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli list-imports target.elf
 ```
 
-List defined function symbols:
+查看本地函数符号：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli list-symbols target.elf
 ```
 
-Plan a patch without writing a file:
+只生成 patch 计划，不写文件：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli inject `
@@ -54,7 +58,7 @@ Plan a patch without writing a file:
   --dry-run
 ```
 
-Write a patched ELF:
+写出 patched ELF：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli inject `
@@ -67,9 +71,9 @@ Write a patched ELF:
   --mode minimal
 ```
 
-## Custom Assembly
+## 自定义汇编
 
-Pass a template file with `--asm`:
+使用 `--asm` 指定汇编模板：
 
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli inject `
@@ -82,7 +86,7 @@ Pass a template file with `--asm`:
   --return-mode none
 ```
 
-Supported pseudo-instructions:
+当前支持的伪指令：
 
 ```asm
 call_symbol malloc
@@ -91,12 +95,12 @@ load_symbol_addr x16, malloc
 branch_abs 0x402e4c
 ```
 
-`--mode raw` lets the assembly file provide its own function prologue and epilogue. `--return-mode none` prevents Pinnacle from appending a jump or `ret`.
+`--mode raw` 表示汇编文件自己提供函数头和函数结尾。`--return-mode none` 表示 Pinnacle 不自动追加跳回或 `ret`。
 
-## Notes
+## 注意事项
 
-- Use `--dry-run` first to inspect generated `entry_patch_asm` and `payload_asm`.
-- External tools such as `objdump`, `readelf`, and `qemu-aarch64` are optional and are not required at runtime.
-- Local test binaries and private development planning documents are intentionally excluded from the public repository.
+- 建议先使用 `--dry-run` 查看生成的 `entry_patch_asm` 和 `payload_asm`。
+- `objdump`、`readelf`、`qemu-aarch64` 等外部工具是可选增强工具，不是运行时依赖。
+- 本地测试程序、私有 hook 汇编和开发规划文档不会上传到公开仓库。
 
-See [USER_GUIDE.md](USER_GUIDE.md) for human-oriented usage details and [AI_USAGE.md](AI_USAGE.md) for concise agent-facing instructions.
+更多人类友好的说明见 [USER_GUIDE.md](USER_GUIDE.md)。AI/自动化代理可参考 [AI_USAGE.md](AI_USAGE.md)。
