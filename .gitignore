@@ -1,0 +1,33 @@
+# Virtual environments and Python cache
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Build and packaging output
+build/
+dist/
+*.egg-info/
+
+# Local ELF fixtures and patched binaries
+server
+server.patched*
+*.patched
+
+# Local private hook payloads
+hooks/
+
+# IDA database files
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+*.i64
+*.idb
+
+# Private development planning notes
+docs/aarch64_elf_asm_injection_dev_plan.md
+
+# Local scratch files
+hook.asm
