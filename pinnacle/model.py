@@ -54,7 +54,7 @@ class PatchRequest:
     target_function: str | None
     user_asm: str | None
     strategy: PatchStrategy
-    mode: SaveMode
+    mode: SaveMode = "full"
     prefer: PreferMode = "auto"
     return_mode: ReturnMode = "jump"
     payload_placement: PayloadPlacement = "auto"

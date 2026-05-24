@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pinnacle.asm.aarch64_call import branch_abs, call_abs, wrap_payload
+from pinnacle.asm.aarch64_call import branch_abs, call_abs, restore_all_context, save_all_context, wrap_payload
 from pinnacle.asm.assembler import assemble_aarch64
 from pinnacle.asm.templates import expand_template, merge_user_and_generated
 from pinnacle.elf.address import require_mapped_executable, va_to_offset
@@ -32,7 +32,6 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
     merged = merge_user_and_generated(request.user_asm, generated_call)
     if not merged.strip():
         raise PatchPlanningError("--call and --asm cannot both be empty")
-    _reject_unsupported_full_wrapper(request, merged)
     expanded = expand_template(
         merged,
         resolver,
@@ -42,8 +41,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
     if request.strategy == "overwrite":
         payload_vaddr = request.insert_vaddr
         payload_added_segment = False
-        payload_body = wrap_payload(expanded, request.mode)
-        payload_asm = _finish_payload(payload_body, request, None, payload_vaddr)
+        payload_asm = _build_payload_asm(expanded, request, None, payload_vaddr)
         payload_bytes = assemble_aarch64(payload_asm, payload_vaddr)
         _verify_payload(payload_bytes, payload_vaddr, request)
         payload_offset = va_to_offset(elf, payload_vaddr)
@@ -52,13 +50,13 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
         entry_patch_bytes = payload_bytes
         overwritten = b""
     else:
-        payload_body = wrap_payload(expanded, request.mode)
-        payload_vaddr, payload_added_segment = _payload_location(elf, request, payload_body)
+        estimated_payload = _build_payload_asm(expanded, request, request.insert_vaddr + 4, request.insert_vaddr)
+        payload_vaddr, payload_added_segment = _payload_location(elf, request, estimated_payload)
         entry_patch_asm, entry_patch_bytes = entry_branch_bytes(request.insert_vaddr, payload_vaddr)
         ensure_decodable(entry_patch_bytes, request.insert_vaddr)
         overwritten = overwritten_for_entry_branch(elf, request.insert_vaddr, len(entry_patch_bytes))
         return_vaddr = request.insert_vaddr + len(overwritten)
-        payload_asm = _finish_payload(payload_body, request, return_vaddr, payload_vaddr)
+        payload_asm = _build_payload_asm(expanded, request, return_vaddr, payload_vaddr)
         payload_bytes = assemble_aarch64(payload_asm, payload_vaddr)
         _verify_payload(payload_bytes, payload_vaddr, request)
         payload_offset = va_to_offset(elf, payload_vaddr)
@@ -107,24 +105,6 @@ def _resolve_target_if_requested(elf, request: PatchRequest) -> CallableTarget |
     return None
 
 
-def _reject_unsupported_full_wrapper(request: PatchRequest, asm: str) -> None:
-    if request.mode != "full":
-        return
-    lowered = asm.lower()
-    if request.allow_inline_data or ".asciz" in lowered or ".ascii" in lowered or ".byte" in lowered:
-        raise PatchPlanningError(
-            "--mode full cannot safely wrap payloads with inline data; use --mode raw and save/restore in the hook"
-        )
-    if "branch_abs" in lowered or re_search_branch_exit(lowered):
-        raise PatchPlanningError(
-            "--mode full cannot safely wrap payloads with direct branch exits; use --mode raw and restore before each exit"
-        )
-
-
-def re_search_branch_exit(text: str) -> bool:
-    return any(line.strip().startswith(("b 0x", "br ", "ret")) for line in text.splitlines())
-
-
 def _payload_location(elf, request: PatchRequest, payload_asm: str) -> tuple[int, bool]:
     if request.strategy == "overwrite":
         return request.insert_vaddr, False
@@ -147,6 +127,55 @@ def _payload_location(elf, request: PatchRequest, payload_asm: str) -> tuple[int
     dummy = b"\x1f\x20\x03\xd5" * ((estimated + 3) // 4)
     payload_vaddr, _ = add_executable_segment(elf, dummy)
     return payload_vaddr, True
+
+
+def _build_payload_asm(
+    expanded_asm: str,
+    request: PatchRequest,
+    return_vaddr: int | None,
+    payload_vaddr: int,
+) -> str:
+    if request.mode == "full":
+        return _apply_full_context_markers(expanded_asm, return_vaddr)
+    payload_body = wrap_payload(expanded_asm, request.mode)
+    return _finish_payload(payload_body, request, return_vaddr, payload_vaddr)
+
+
+def _apply_full_context_markers(expanded_asm: str, return_vaddr: int | None) -> str:
+    marker_seen = False
+    lines: list[str] = []
+    for raw_line in expanded_asm.splitlines():
+        stripped = raw_line.strip()
+        parts = stripped.split()
+        if not parts or not parts[0].startswith("ret"):
+            lines.append(raw_line)
+            continue
+
+        marker = parts[0]
+        if marker == "ret":
+            marker_seen = True
+            lines.append("ret")
+        elif marker == "ret_restore":
+            marker_seen = True
+            lines.extend(restore_all_context().splitlines())
+            lines.append("ret")
+        elif marker == "ret_jump" and len(parts) == 2:
+            marker_seen = True
+            lines.append(f"b 0x{int(parts[1], 0):x}")
+        elif marker == "ret_restore_jump" and len(parts) == 2:
+            marker_seen = True
+            lines.extend(restore_all_context().splitlines())
+            lines.append(f"b 0x{int(parts[1], 0):x}")
+        else:
+            lines.append(raw_line)
+
+    if not marker_seen:
+        lines.extend(restore_all_context().splitlines())
+        if return_vaddr is None:
+            lines.append("ret")
+        else:
+            lines.append(f"b 0x{return_vaddr:x}")
+    return "\n".join([save_all_context(), *lines])
 
 
 def _finish_payload(

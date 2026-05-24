@@ -93,11 +93,18 @@ load_symbol_addr x16, malloc
 branch_abs 0x402e4c
 ```
 
-`--mode raw` lets the assembly file provide its own function prologue and epilogue. `--return-mode none` prevents Pinnacle from appending a jump or `ret`.
+Prefer `ret...` markers in assembly to describe exit behavior. `--mode` is kept for compatibility with older usage.
 
-Use `--mode full` when the injected code should not change the original context. It saves and restores `x0-x30` and `NZCV`. Since `x0` is restored, this mode is not suitable for hooks that intentionally return a new value in `x0`.
+The default `--mode full` saves `x0-x30` and `NZCV` at payload entry. Exits are controlled by assembly markers:
 
-For hooks with inline data or multiple direct branch exits, use `--mode raw` and restore registers before each exit.
+```asm
+ret                         // return without restoring context
+ret_restore                 // restore all registers and NZCV, then return
+ret_jump 0x426cc8           // jump without restoring context
+ret_restore_jump 0x426cc8   // restore all registers and NZCV, then jump
+```
+
+If no `ret...` marker is present, Pinnacle restores all registers and `NZCV`, then returns to the original flow.
 
 If the assembly contains inline data such as `.asciz`, pass `--allow-inline-data` so validation does not require the data bytes to disassemble as instructions.
 

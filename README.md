@@ -95,11 +95,18 @@ load_symbol_addr x16, malloc
 branch_abs 0x402e4c
 ```
 
-`--mode raw` 表示汇编文件自己提供函数头和函数结尾。`--return-mode none` 表示 Pinnacle 不自动追加跳回或 `ret`。
+推荐在 asm 中使用 `ret...` 标记描述出口行为，而不是依赖 `--mode` 组合。`--mode` 仅保留为兼容旧用法。
 
-如果注入代码只是增强原流程、不希望改变现场，可以使用 `--mode full`。它会自动保存和恢复 `x0-x30` 以及 `NZCV` 条件标志。注意：`--mode full` 会恢复 `x0`，因此不适合需要通过 `x0` 返回新结果的 hook。
+默认 `--mode full` 会在 payload 入口保存 `x0-x30` 和 `NZCV`。出口由 asm 中的特殊标记控制：
 
-对于包含内联数据或多个直接跳转出口的 hook，建议使用 `--mode raw`，并在每个出口前恢复寄存器。
+```asm
+ret                         // 不恢复现场，直接返回
+ret_restore                 // 恢复所有寄存器和 NZCV 后返回
+ret_jump 0x426cc8           // 不恢复现场，直接跳转
+ret_restore_jump 0x426cc8   // 恢复所有寄存器和 NZCV 后跳转
+```
+
+如果没有任何 `ret...` 标记，默认会恢复所有寄存器和 `NZCV`，然后跳回原流程。
 
 如果汇编中包含 `.asciz` 这类内联数据，需要加上 `--allow-inline-data`，否则 Capstone 会尝试把数据区也当成指令反汇编。
 
