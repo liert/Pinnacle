@@ -99,6 +99,8 @@ If the assembly contains inline data such as `.asciz`, pass `--allow-inline-data
 
 The default placement mode is `--payload-placement auto`: Pinnacle first searches executable sections for a code cave, avoiding `.rodata`; if no suitable cave exists, it creates a new executable `PT_LOAD` segment. Use `--payload-placement segment` to force the new-segment path.
 
+If the patched ELF must be packed with UPX later, use `--payload-placement load-cave`. This mode only uses caves in existing executable `PT_LOAD` segments and does not add Program Headers, avoiding UPX errors such as `bad e_phoff`.
+
 ## Notes
 
 - Use `--dry-run` first to inspect generated `entry_patch_asm` and `payload_asm`.

@@ -64,6 +64,7 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 - `--strategy trampoline`：从目标地址跳到 payload。
 - `--payload-placement auto`：默认策略，先找可执行 Section 的 code cave，找不到则新增可执行 `PT_LOAD` 段。
 - `--payload-placement codecave`：只允许使用可执行 Section 中的 code cave。
+- `--payload-placement load-cave`：只使用已有可执行 `PT_LOAD` 中的空洞，适合后续还要 UPX 打包的场景。
 - `--payload-placement segment`：强制新增可执行 `PT_LOAD` 段放置 payload。
 - `--mode minimal`：由工具包一层较小的函数头和函数尾。
 - `--mode raw`：工具不包装 payload，汇编文件自己负责函数头和函数尾。
@@ -113,6 +114,12 @@ examples/call_import_malloc.asm
 
 ```powershell
 --payload-addr 0x430c48
+```
+
+如果补丁后还要使用 UPX，优先使用：
+
+```powershell
+--payload-placement load-cave
 ```
 
 如果 `trampoline` 拒绝 patch，通常是被覆盖指令中包含 PC-relative 指令。可以换一个地址，或选择更适合目标位置的注入策略。

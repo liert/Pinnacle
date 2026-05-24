@@ -10,7 +10,7 @@ from pinnacle.elf.binary import ensure_supported_elf, parse_elf
 from pinnacle.elf.symbols import resolve_callable
 from pinnacle.errors import PatchPlanningError
 from pinnacle.model import CallableTarget, PatchPlan, PatchRequest
-from pinnacle.patch.codecave import find_code_cave
+from pinnacle.patch.codecave import find_code_cave, find_executable_load_cave
 from pinnacle.patch.trampoline import entry_branch_bytes, overwritten_for_entry_branch
 from pinnacle.patch.writer import add_executable_segment, patch_bytes, write_binary
 from pinnacle.verify.checks import require_aligned_aarch64
@@ -120,6 +120,11 @@ def _payload_location(elf, request: PatchRequest, payload_asm: str) -> tuple[int
             return cave[0], False
         if request.payload_placement == "codecave":
             raise PatchPlanningError("No executable section code cave found; pass --payload-placement segment or --payload-addr")
+    if request.payload_placement == "load-cave":
+        cave = find_executable_load_cave(elf, estimated)
+        if cave is None:
+            raise PatchPlanningError("No executable LOAD code cave found; pass --payload-placement segment or --payload-addr")
+        return cave[0], False
     dummy = b"\x1f\x20\x03\xd5" * ((estimated + 3) // 4)
     payload_vaddr, _ = add_executable_segment(elf, dummy)
     return payload_vaddr, True

@@ -64,6 +64,7 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
 - `--strategy trampoline`: branch from the target address to a payload.
 - `--payload-placement auto`: default mode; use an executable-section code cave first, then fall back to a new executable `PT_LOAD` segment.
 - `--payload-placement codecave`: only use executable-section code caves.
+- `--payload-placement load-cave`: only use caves in existing executable `PT_LOAD` segments, useful when the result must still be packed by UPX.
 - `--payload-placement segment`: force a new executable `PT_LOAD` segment.
 - `--mode minimal`: wrap payload with a small prologue and epilogue.
 - `--mode raw`: do not wrap the payload; the assembly file is responsible for prologue and epilogue.
@@ -115,6 +116,12 @@ If you do not want automatic executable-segment creation, pass an explicit execu
 
 ```powershell
 --payload-addr 0x430c48
+```
+
+If the patched file will be packed with UPX, prefer:
+
+```powershell
+--payload-placement load-cave
 ```
 
 If `trampoline` refuses a patch, the overwritten instruction may be PC-relative. Choose a different address or use a strategy appropriate for your target.

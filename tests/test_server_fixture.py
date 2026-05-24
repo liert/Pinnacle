@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import struct
 
 import pytest
 
@@ -57,3 +58,29 @@ def test_trampoline_dry_run_plan_for_server_import() -> None:
     assert plan.overwritten_bytes
     assert plan.payload_in_added_segment
     assert plan.payload_vaddr >= 0x800000
+
+
+def test_load_cave_plan_preserves_existing_program_headers() -> None:
+    request = PatchRequest(
+        input_path=SERVER,
+        output_path=None,
+        insert_vaddr=0x402E48,
+        target_function="malloc",
+        user_asm=None,
+        strategy="trampoline",
+        mode="minimal",
+        prefer="imported",
+        payload_placement="load-cave",
+        dry_run=True,
+    )
+
+    plan = plan_patch(request)
+
+    assert not plan.payload_in_added_segment
+    assert plan.payload_vaddr == 0x430C48
+    assert _elf_phoff(SERVER) == 0x40
+
+
+def _elf_phoff(path: Path) -> int:
+    data = path.read_bytes()[:0x40]
+    return struct.unpack_from("<Q", data, 0x20)[0]

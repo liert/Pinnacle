@@ -51,9 +51,9 @@ def build_parser() -> argparse.ArgumentParser:
     inject.add_argument("--payload-addr", type=parse_int)
     inject.add_argument(
         "--payload-placement",
-        choices=["auto", "codecave", "segment"],
+        choices=["auto", "codecave", "load-cave", "segment"],
         default="auto",
-        help="Where to place trampoline payloads: executable code cave, new executable segment, or auto",
+        help="Where to place trampoline payloads: executable section cave, executable LOAD cave, new executable segment, or auto",
     )
     inject.add_argument(
         "--return-mode",

@@ -11,7 +11,7 @@ PatchStrategy = Literal["overwrite", "trampoline", "codecave"]
 SaveMode = Literal["minimal", "safe", "raw"]
 PreferMode = Literal["auto", "defined", "imported"]
 ReturnMode = Literal["jump", "ret", "none"]
-PayloadPlacement = Literal["auto", "codecave", "segment"]
+PayloadPlacement = Literal["auto", "codecave", "load-cave", "segment"]
 
 
 @dataclass(slots=True)

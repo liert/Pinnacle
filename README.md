@@ -101,6 +101,8 @@ branch_abs 0x402e4c
 
 payload 默认放置策略为 `--payload-placement auto`：先找可执行 Section 中的 code cave，避免把代码放进 `.rodata`；如果没有足够空间，则新增一个可执行 `PT_LOAD` 段。也可以显式使用 `--payload-placement segment`。
 
+如果 patched ELF 后续还需要用 UPX 打包，建议使用 `--payload-placement load-cave`。该模式只使用已有可执行 `PT_LOAD` 中的空洞，不新增 Program Header，能避免 UPX 对新增段布局报 `bad e_phoff`。
+
 ## 注意事项
 
 - 建议先使用 `--dry-run` 查看生成的 `entry_patch_asm` 和 `payload_asm`。
