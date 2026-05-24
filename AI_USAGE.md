@@ -17,7 +17,7 @@ Do not replace LIEF with a handwritten ELF parser unless a narrow unsupported ca
 ```powershell
 .\.venv\Scripts\python.exe -m pinnacle.cli list-imports target.elf
 .\.venv\Scripts\python.exe -m pinnacle.cli list-symbols target.elf
-.\.venv\Scripts\python.exe -m pinnacle.cli inject --input target.elf --addr 0x4294A8 --call malloc --prefer imported --strategy trampoline --mode minimal --dry-run
+.\.venv\Scripts\python.exe -m pinnacle.cli inject --input target.elf --addr 0x4294A8 --call malloc --prefer imported --strategy trampoline --dry-run
 ```
 
 Custom function-shaped hook:
@@ -58,7 +58,8 @@ The public repository intentionally excludes the private development plan and lo
 ## Implementation Notes
 
 - `--mode` is a compatibility option and should be treated as not recommended for new hook exit design.
-- Default `--mode full` saves `x0-x30` and `NZCV` at payload entry.
+- Default `--mode full` saves `x0-x30` and `NZCV` at payload entry into an automatically reserved runtime context buffer by extending a writable NOBITS area, usually `.bss`.
+- Full context preservation only uses a temporary 16-byte stack slot for the address scratch register; it must not push the whole register frame onto the hooked function's current stack.
 - Use asm exit markers: `ret`, `ret_restore`, `ret_jump 0xADDR`, `ret_restore_jump 0xADDR`.
 - If no `ret...` marker exists, restore all registers and `NZCV`, then return to the original flow.
 - `--return-mode none` means do not append a jump or `ret`.

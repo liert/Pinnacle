@@ -52,7 +52,6 @@ Plan a patch without writing a file:
   --call malloc `
   --prefer imported `
   --strategy trampoline `
-  --mode minimal `
   --dry-run
 ```
 
@@ -65,8 +64,7 @@ Write a patched ELF:
   --addr 0x4294A8 `
   --call malloc `
   --prefer imported `
-  --strategy trampoline `
-  --mode minimal
+  --strategy trampoline
 ```
 
 ## Custom Assembly
@@ -95,7 +93,9 @@ branch_abs 0x402e4c
 
 Prefer `ret...` markers in assembly to describe exit behavior. `--mode` is kept for compatibility with older usage.
 
-The default `--mode full` saves `x0-x30` and `NZCV` at payload entry. Exits are controlled by assembly markers:
+The default `--mode full` saves `x0-x30` and `NZCV` at payload entry. Pinnacle automatically extends a writable NOBITS area of the ELF, usually `.bss`, and places the full context in that newly reserved runtime buffer; the entry code only uses a temporary 16-byte stack slot for the address scratch register, avoiding a full register frame on the hooked function's current stack.
+
+Exits are controlled by assembly markers:
 
 ```asm
 ret                         // return without restoring context

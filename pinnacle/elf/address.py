@@ -65,6 +65,17 @@ def is_executable_segment(segment: Any) -> bool:
         return False
 
 
+def is_writable_segment(segment: Any) -> bool:
+    flags = getattr(segment, "flags", "")
+    name = enum_name(flags).upper()
+    if "W" in name or "WRITE" in name:
+        return True
+    try:
+        return bool(int(flags) & 0x2)
+    except Exception:
+        return False
+
+
 def require_mapped_executable(elf: ElfBinary, vaddr: int) -> None:
     segment = segment_for_va(elf, vaddr)
     if segment is None:

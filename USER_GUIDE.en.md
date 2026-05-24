@@ -66,7 +66,7 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
 - `--payload-placement codecave`: only use executable-section code caves.
 - `--payload-placement load-cave`: only use caves in existing executable `PT_LOAD` segments, useful when the result must still be packed by UPX.
 - `--payload-placement segment`: force a new executable `PT_LOAD` segment.
-- `--mode`: compatibility option. New hooks should prefer assembly `ret...` markers for exit behavior. The default `full` mode saves `x0-x30` and `NZCV` at entry.
+- `--mode`: compatibility option. New hooks should prefer assembly `ret...` markers for exit behavior. The default `full` mode saves `x0-x30` and `NZCV` at entry. Pinnacle automatically extends a writable NOBITS area of the ELF, usually `.bss`, and stores the full context in that newly reserved runtime buffer, with only a temporary 16-byte stack slot for the address scratch register.
 - `--return-mode jump`: append a branch back to the original flow.
 - `--return-mode ret`: append `ret`.
 - `--return-mode none`: append nothing.
@@ -89,7 +89,7 @@ ret_restore_jump 0x426cc8
 - `ret_jump 0xADDR`: jump without restoring context.
 - `ret_restore_jump 0xADDR`: restore all registers and `NZCV`, then jump.
 
-If no `ret...` marker exists, Pinnacle restores all registers and `NZCV`, then returns to the original flow.
+If no `ret...` marker exists, Pinnacle restores all registers and `NZCV` from the same context buffer, then returns to the original flow.
 
 ## Function-Shaped Hooks for IDA
 

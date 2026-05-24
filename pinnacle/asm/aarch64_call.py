@@ -88,6 +88,44 @@ def restore_all_context() -> str:
     return "\n".join(_RESTORE_ALL)
 
 
+def save_all_context_static(context_vaddr: int) -> str:
+    lines = [
+        "str x16, [sp, #-16]!",
+        load_abs("x16", context_vaddr),
+    ]
+    for reg in range(16):
+        lines.append(f"str x{reg}, [x16, #{reg * 8}]")
+    lines.extend(
+        [
+            "ldr x0, [sp], #16",
+            "str x0, [x16, #128]",
+        ]
+    )
+    for reg in range(17, 31):
+        lines.append(f"str x{reg}, [x16, #{reg * 8}]")
+    lines.extend(
+        [
+            "mrs x0, nzcv",
+            "str x0, [x16, #248]",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def restore_all_context_static(context_vaddr: int) -> str:
+    lines = [
+        load_abs("x16", context_vaddr),
+        "ldr x0, [x16, #248]",
+        "msr nzcv, x0",
+    ]
+    for reg in range(16):
+        lines.append(f"ldr x{reg}, [x16, #{reg * 8}]")
+    for reg in range(17, 31):
+        lines.append(f"ldr x{reg}, [x16, #{reg * 8}]")
+    lines.append("ldr x16, [x16, #128]")
+    return "\n".join(lines)
+
+
 def _wrap_full(body: str) -> str:
     return "\n".join([*_SAVE_ALL, body, *_RESTORE_ALL])
 

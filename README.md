@@ -54,7 +54,6 @@ python3 -m venv .venv
   --call malloc `
   --prefer imported `
   --strategy trampoline `
-  --mode minimal `
   --dry-run
 ```
 
@@ -67,8 +66,7 @@ python3 -m venv .venv
   --addr 0x4294A8 `
   --call malloc `
   --prefer imported `
-  --strategy trampoline `
-  --mode minimal
+  --strategy trampoline
 ```
 
 ## 自定义汇编
@@ -97,7 +95,9 @@ branch_abs 0x402e4c
 
 推荐在 asm 中使用 `ret...` 标记描述出口行为，而不是依赖 `--mode` 组合。`--mode` 仅保留为兼容旧用法。
 
-默认 `--mode full` 会在 payload 入口保存 `x0-x30` 和 `NZCV`。出口由 asm 中的特殊标记控制：
+默认 `--mode full` 会在 payload 入口保存 `x0-x30` 和 `NZCV`。工具会自动扩展 ELF 的可写 NOBITS 区域，通常是 `.bss`，把完整上下文放到新扩出的运行时缓冲区；入口只临时使用 16 字节栈空间保存寻址 scratch 寄存器，避免把整组寄存器压进被 hook 函数的当前栈帧。
+
+出口由 asm 中的特殊标记控制：
 
 ```asm
 ret                         // 不恢复现场，直接返回

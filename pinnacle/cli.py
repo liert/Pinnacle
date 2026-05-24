@@ -51,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         choices=["full", "minimal", "safe", "raw"],
         default="full",
-        help="Compatibility wrapper mode; prefer asm ret* markers. Default: full context save",
+        help="Compatibility wrapper mode; prefer asm ret* markers. Default: full context save in a writable runtime buffer",
     )
     inject.add_argument("--payload-addr", type=parse_int)
     inject.add_argument(
@@ -134,6 +134,8 @@ def print_plan(plan) -> None:
     print(f"insert_offset: 0x{plan.insert_offset:x}")
     print(f"payload_vaddr: 0x{plan.payload_vaddr:x}")
     print(f"payload_offset: 0x{plan.payload_offset:x}")
+    if plan.context_vaddr is not None:
+        print(f"context_vaddr: 0x{plan.context_vaddr:x}")
     print(f"entry_patch_len: {len(plan.entry_patch_bytes)}")
     print(f"payload_len: {len(plan.payload_bytes)}")
     if plan.overwritten_bytes:

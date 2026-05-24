@@ -81,6 +81,27 @@ def test_load_cave_plan_preserves_existing_program_headers() -> None:
     assert _elf_phoff(SERVER) == 0x40
 
 
+def test_default_full_mode_uses_static_context_buffer() -> None:
+    request = PatchRequest(
+        input_path=SERVER,
+        output_path=None,
+        insert_vaddr=0x402E48,
+        target_function="malloc",
+        user_asm=None,
+        strategy="trampoline",
+        prefer="imported",
+        payload_placement="load-cave",
+        dry_run=True,
+    )
+
+    plan = plan_patch(request)
+
+    assert plan.context_vaddr == 0x44C460
+    assert "str x16, [sp, #-16]!" in plan.payload_asm
+    assert "stp x0, x1, [sp, #-16]!" not in plan.payload_asm
+    assert "ldr x16, [x16, #128]" in plan.payload_asm
+
+
 def _elf_phoff(path: Path) -> int:
     data = path.read_bytes()[:0x40]
     return struct.unpack_from("<Q", data, 0x20)[0]

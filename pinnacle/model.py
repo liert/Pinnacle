@@ -76,3 +76,4 @@ class PatchPlan:
     entry_patch_asm: str
     entry_patch_bytes: bytes
     payload_in_added_segment: bool = False
+    context_vaddr: int | None = None

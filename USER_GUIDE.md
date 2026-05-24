@@ -66,7 +66,7 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 - `--payload-placement codecave`：只允许使用可执行 Section 中的 code cave。
 - `--payload-placement load-cave`：只使用已有可执行 `PT_LOAD` 中的空洞，适合后续还要 UPX 打包的场景。
 - `--payload-placement segment`：强制新增可执行 `PT_LOAD` 段放置 payload。
-- `--mode`：兼容旧用法，不推荐新 hook 依赖它组合出口行为；默认 `full` 会在入口保存 `x0-x30` 和 `NZCV`。
+- `--mode`：兼容旧用法，不推荐新 hook 依赖它组合出口行为；默认 `full` 会在入口保存 `x0-x30` 和 `NZCV`。工具会自动扩展 ELF 的可写 NOBITS 区域，通常是 `.bss`，把完整上下文放到新扩出的运行时缓冲区；入口只临时使用 16 字节栈空间保存寻址 scratch 寄存器。
 - `--return-mode jump`：payload 末尾跳回原流程。
 - `--return-mode ret`：payload 末尾追加 `ret`。
 - `--return-mode none`：payload 末尾不追加任何内容。
@@ -91,7 +91,7 @@ ret_restore_jump 0x426cc8
 - `ret_jump 0xADDR`：不恢复现场，直接跳到目标地址。
 - `ret_restore_jump 0xADDR`：恢复所有寄存器和 `NZCV` 后跳到目标地址。
 
-如果没有任何 `ret...` 标记，工具默认恢复所有寄存器和 `NZCV`，然后跳回原流程。
+如果没有任何 `ret...` 标记，工具默认从同一块上下文缓冲区恢复所有寄存器和 `NZCV`，然后跳回原流程。
 
 ## 示例汇编
 
