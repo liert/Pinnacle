@@ -57,6 +57,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inject.add_argument("--dry-run", action="store_true")
     inject.add_argument("--external-verify", action="store_true")
+    inject.add_argument(
+        "--allow-inline-data",
+        action="store_true",
+        help="Allow raw payloads with embedded data such as .asciz strings",
+    )
     inject.set_defaults(func=cmd_inject)
 
     return parser
@@ -101,6 +106,7 @@ def cmd_inject(args: argparse.Namespace) -> int:
         return_mode=args.return_mode,
         payload_vaddr=args.payload_addr,
         external_verify=args.external_verify,
+        allow_inline_data=args.allow_inline_data,
         dry_run=args.dry_run,
     )
     plan = plan_patch(request)

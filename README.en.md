@@ -95,6 +95,8 @@ branch_abs 0x402e4c
 
 `--mode raw` lets the assembly file provide its own function prologue and epilogue. `--return-mode none` prevents Pinnacle from appending a jump or `ret`.
 
+If the assembly contains inline data such as `.asciz`, pass `--allow-inline-data` so validation does not require the data bytes to disassemble as instructions.
+
 ## Notes
 
 - Use `--dry-run` first to inspect generated `entry_patch_asm` and `payload_asm`.

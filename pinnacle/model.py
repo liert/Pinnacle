@@ -58,6 +58,7 @@ class PatchRequest:
     return_mode: ReturnMode = "jump"
     payload_vaddr: int | None = None
     external_verify: bool = False
+    allow_inline_data: bool = False
     dry_run: bool = False
 
 

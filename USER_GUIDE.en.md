@@ -67,6 +67,7 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
 - `--return-mode jump`: append a branch back to the original flow.
 - `--return-mode ret`: append `ret`.
 - `--return-mode none`: append nothing.
+- `--allow-inline-data`: allow inline data such as `.asciz` in raw payloads.
 - `--dry-run`: print the patch plan without writing a file.
 
 ## Function-Shaped Hooks for IDA

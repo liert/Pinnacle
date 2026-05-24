@@ -14,7 +14,7 @@ from pinnacle.patch.codecave import find_code_cave
 from pinnacle.patch.trampoline import entry_branch_bytes, overwritten_for_entry_branch
 from pinnacle.patch.writer import patch_bytes, write_binary
 from pinnacle.verify.checks import require_aligned_aarch64
-from pinnacle.verify.disasm import ensure_decodable
+from pinnacle.verify.disasm import disasm_aarch64, ensure_decodable
 
 
 def plan_patch(request: PatchRequest) -> PatchPlan:
@@ -43,7 +43,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
         payload_body = wrap_payload(expanded, request.mode)
         payload_asm = _finish_payload(payload_body, request, None, payload_vaddr)
         payload_bytes = assemble_aarch64(payload_asm, payload_vaddr)
-        ensure_decodable(payload_bytes, payload_vaddr)
+        _verify_payload(payload_bytes, payload_vaddr, request)
         payload_offset = va_to_offset(elf, payload_vaddr)
         insert_offset = va_to_offset(elf, request.insert_vaddr)
         entry_patch_asm = payload_asm
@@ -58,7 +58,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
         return_vaddr = request.insert_vaddr + len(overwritten)
         payload_asm = _finish_payload(payload_body, request, return_vaddr, payload_vaddr)
         payload_bytes = assemble_aarch64(payload_asm, payload_vaddr)
-        ensure_decodable(payload_bytes, payload_vaddr)
+        _verify_payload(payload_bytes, payload_vaddr, request)
         payload_offset = va_to_offset(elf, payload_vaddr)
         insert_offset = va_to_offset(elf, request.insert_vaddr)
 
@@ -124,3 +124,11 @@ def _finish_payload(
     if return_vaddr is None:
         return payload_body
     return f"{payload_body}\n{branch_abs(return_vaddr, payload_vaddr)}"
+
+
+def _verify_payload(payload_bytes: bytes, payload_vaddr: int, request: PatchRequest) -> None:
+    if not request.allow_inline_data:
+        ensure_decodable(payload_bytes, payload_vaddr)
+        return
+    if not disasm_aarch64(payload_bytes, payload_vaddr):
+        raise PatchPlanningError("Payload contains no decodable AArch64 instruction")

@@ -67,6 +67,7 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 - `--return-mode jump`：payload 末尾跳回原流程。
 - `--return-mode ret`：payload 末尾追加 `ret`。
 - `--return-mode none`：payload 末尾不追加任何内容。
+- `--allow-inline-data`：允许 raw payload 中包含 `.asciz` 等内联数据。
 - `--dry-run`：只打印 patch 计划，不写文件。
 
 ## 让 IDA 更容易识别 payload 为函数

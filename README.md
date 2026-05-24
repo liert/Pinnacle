@@ -97,6 +97,8 @@ branch_abs 0x402e4c
 
 `--mode raw` 表示汇编文件自己提供函数头和函数结尾。`--return-mode none` 表示 Pinnacle 不自动追加跳回或 `ret`。
 
+如果汇编中包含 `.asciz` 这类内联数据，需要加上 `--allow-inline-data`，否则 Capstone 会尝试把数据区也当成指令反汇编。
+
 ## 注意事项
 
 - 建议先使用 `--dry-run` 查看生成的 `entry_patch_asm` 和 `payload_asm`。

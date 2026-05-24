@@ -61,5 +61,6 @@ The public repository intentionally excludes the private development plan and lo
 - `--return-mode none` means do not append a jump or `ret`.
 - `--return-mode jump` is the default trampoline behavior.
 - `--return-mode ret` appends `ret`.
+- `--allow-inline-data` is required for raw payloads containing `.asciz` or other embedded data bytes.
 - Imported calls should resolve to `CallableTarget(kind="imported", call_vaddr=<plt address>)`.
 - Tests that need the local `server` fixture should skip when it is absent.
