@@ -47,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
     inject.add_argument("--prefer", choices=["auto", "defined", "imported"], default="auto")
     inject.add_argument("--asm", dest="asm_path", type=Path)
     inject.add_argument("--strategy", choices=["overwrite", "trampoline", "codecave"], default="trampoline")
-    inject.add_argument("--mode", choices=["minimal", "safe", "raw"], default="safe")
+    inject.add_argument("--mode", choices=["minimal", "safe", "full", "raw"], default="safe")
     inject.add_argument("--payload-addr", type=parse_int)
     inject.add_argument(
         "--payload-placement",

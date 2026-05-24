@@ -67,12 +67,15 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
 - `--payload-placement load-cave`: only use caves in existing executable `PT_LOAD` segments, useful when the result must still be packed by UPX.
 - `--payload-placement segment`: force a new executable `PT_LOAD` segment.
 - `--mode minimal`: wrap payload with a small prologue and epilogue.
+- `--mode full`: save and restore `x0-x30` and `NZCV`, useful when the hook must not affect the original register state.
 - `--mode raw`: do not wrap the payload; the assembly file is responsible for prologue and epilogue.
 - `--return-mode jump`: append a branch back to the original flow.
 - `--return-mode ret`: append `ret`.
 - `--return-mode none`: append nothing.
 - `--allow-inline-data`: allow inline data such as `.asciz` in raw payloads.
 - `--dry-run`: print the patch plan without writing a file.
+
+`--mode full` is intended for hooks that fall through to the end of the payload. If the assembly contains inline data or multiple direct branch exits, use `--mode raw` and restore registers explicitly before every exit.
 
 ## Function-Shaped Hooks for IDA
 

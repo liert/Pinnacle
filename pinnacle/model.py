@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 CallableKind = Literal["defined", "imported"]
 PatchStrategy = Literal["overwrite", "trampoline", "codecave"]
-SaveMode = Literal["minimal", "safe", "raw"]
+SaveMode = Literal["minimal", "safe", "full", "raw"]
 PreferMode = Literal["auto", "defined", "imported"]
 ReturnMode = Literal["jump", "ret", "none"]
 PayloadPlacement = Literal["auto", "codecave", "load-cave", "segment"]

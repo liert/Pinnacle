@@ -58,6 +58,7 @@ The public repository intentionally excludes the private development plan and lo
 ## Implementation Notes
 
 - `--mode raw` means the user assembly owns prologue and epilogue.
+- `--mode full` saves/restores `x0-x30` and `NZCV`; use it only for payloads that fall through to the wrapper epilogue. For inline data or multiple direct exits, use `--mode raw` and restore explicitly at each exit.
 - `--return-mode none` means do not append a jump or `ret`.
 - `--return-mode jump` is the default trampoline behavior.
 - `--return-mode ret` appends `ret`.

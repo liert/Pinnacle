@@ -32,6 +32,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
     merged = merge_user_and_generated(request.user_asm, generated_call)
     if not merged.strip():
         raise PatchPlanningError("--call and --asm cannot both be empty")
+    _reject_unsupported_full_wrapper(request, merged)
     expanded = expand_template(
         merged,
         resolver,
@@ -104,6 +105,24 @@ def _resolve_target_if_requested(elf, request: PatchRequest) -> CallableTarget |
     if request.target_function:
         return resolve_callable(elf, request.target_function, request.prefer)
     return None
+
+
+def _reject_unsupported_full_wrapper(request: PatchRequest, asm: str) -> None:
+    if request.mode != "full":
+        return
+    lowered = asm.lower()
+    if request.allow_inline_data or ".asciz" in lowered or ".ascii" in lowered or ".byte" in lowered:
+        raise PatchPlanningError(
+            "--mode full cannot safely wrap payloads with inline data; use --mode raw and save/restore in the hook"
+        )
+    if "branch_abs" in lowered or re_search_branch_exit(lowered):
+        raise PatchPlanningError(
+            "--mode full cannot safely wrap payloads with direct branch exits; use --mode raw and restore before each exit"
+        )
+
+
+def re_search_branch_exit(text: str) -> bool:
+    return any(line.strip().startswith(("b 0x", "br ", "ret")) for line in text.splitlines())
 
 
 def _payload_location(elf, request: PatchRequest, payload_asm: str) -> tuple[int, bool]:

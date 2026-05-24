@@ -67,6 +67,7 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 - `--payload-placement load-cave`：只使用已有可执行 `PT_LOAD` 中的空洞，适合后续还要 UPX 打包的场景。
 - `--payload-placement segment`：强制新增可执行 `PT_LOAD` 段放置 payload。
 - `--mode minimal`：由工具包一层较小的函数头和函数尾。
+- `--mode full`：自动保存并恢复 `x0-x30` 和 `NZCV`，适合不希望影响原流程寄存器状态的 hook。
 - `--mode raw`：工具不包装 payload，汇编文件自己负责函数头和函数尾。
 - `--return-mode jump`：payload 末尾跳回原流程。
 - `--return-mode ret`：payload 末尾追加 `ret`。
@@ -91,6 +92,16 @@ ret
 ```powershell
 --mode raw --return-mode none
 ```
+
+如果 hook 逻辑只是额外等待、额外调用函数或记录状态，并且不需要改变原函数返回值，建议使用：
+
+```powershell
+--mode full
+```
+
+如果 hook 需要通过 `x0` 返回结果，不要使用 `--mode full`，因为它会恢复原始 `x0`。
+
+`--mode full` 只适合顺序执行到 payload 末尾的 hook。如果汇编中包含内联数据，或存在多个直接跳转出口，需要使用 `--mode raw`，并在每个出口前显式恢复寄存器。
 
 ## 示例汇编
 

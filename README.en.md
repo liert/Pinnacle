@@ -95,6 +95,10 @@ branch_abs 0x402e4c
 
 `--mode raw` lets the assembly file provide its own function prologue and epilogue. `--return-mode none` prevents Pinnacle from appending a jump or `ret`.
 
+Use `--mode full` when the injected code should not change the original context. It saves and restores `x0-x30` and `NZCV`. Since `x0` is restored, this mode is not suitable for hooks that intentionally return a new value in `x0`.
+
+For hooks with inline data or multiple direct branch exits, use `--mode raw` and restore registers before each exit.
+
 If the assembly contains inline data such as `.asciz`, pass `--allow-inline-data` so validation does not require the data bytes to disassemble as instructions.
 
 The default placement mode is `--payload-placement auto`: Pinnacle first searches executable sections for a code cave, avoiding `.rodata`; if no suitable cave exists, it creates a new executable `PT_LOAD` segment. Use `--payload-placement segment` to force the new-segment path.
