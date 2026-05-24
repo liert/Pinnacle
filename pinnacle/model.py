@@ -11,6 +11,7 @@ PatchStrategy = Literal["overwrite", "trampoline", "codecave"]
 SaveMode = Literal["minimal", "safe", "raw"]
 PreferMode = Literal["auto", "defined", "imported"]
 ReturnMode = Literal["jump", "ret", "none"]
+PayloadPlacement = Literal["auto", "codecave", "segment"]
 
 
 @dataclass(slots=True)
@@ -56,6 +57,7 @@ class PatchRequest:
     mode: SaveMode
     prefer: PreferMode = "auto"
     return_mode: ReturnMode = "jump"
+    payload_placement: PayloadPlacement = "auto"
     payload_vaddr: int | None = None
     external_verify: bool = False
     allow_inline_data: bool = False
@@ -73,3 +75,4 @@ class PatchPlan:
     payload_bytes: bytes
     entry_patch_asm: str
     entry_patch_bytes: bytes
+    payload_in_added_segment: bool = False

@@ -11,7 +11,7 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
 - Find imported functions such as `malloc`, `fopen`, or `unlink` through PLT entries.
 - Generate AArch64 calls to those functions.
 - Assemble custom hook code.
-- Place hook code in an executable code cave and branch to it from the target address.
+- Place hook code in an executable-section code cave, or add a new executable `PT_LOAD` segment when no cave is available.
 
 ## Recommended Workflow
 
@@ -61,7 +61,10 @@ Pinnacle patches an AArch64 Linux ELF file at a chosen virtual address. It can:
 - `--call`: function name to call.
 - `--prefer imported`: prefer imported PLT functions.
 - `--asm`: custom assembly template.
-- `--strategy trampoline`: branch from the target address to a payload in a code cave.
+- `--strategy trampoline`: branch from the target address to a payload.
+- `--payload-placement auto`: default mode; use an executable-section code cave first, then fall back to a new executable `PT_LOAD` segment.
+- `--payload-placement codecave`: only use executable-section code caves.
+- `--payload-placement segment`: force a new executable `PT_LOAD` segment.
 - `--mode minimal`: wrap payload with a small prologue and epilogue.
 - `--mode raw`: do not wrap the payload; the assembly file is responsible for prologue and epilogue.
 - `--return-mode jump`: append a branch back to the original flow.
@@ -108,7 +111,7 @@ If a dependency is missing, install:
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-If no code cave is found, pass an explicit executable payload address:
+If you do not want automatic executable-segment creation, pass an explicit executable payload address:
 
 ```powershell
 --payload-addr 0x430c48

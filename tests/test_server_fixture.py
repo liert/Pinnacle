@@ -55,3 +55,5 @@ def test_trampoline_dry_run_plan_for_server_import() -> None:
     assert entry[0].mnemonic == "b"
     assert any(insn.mnemonic == "bl" and "0x403100" in insn.op_str for insn in payload)
     assert plan.overwritten_bytes
+    assert plan.payload_in_added_segment
+    assert plan.payload_vaddr >= 0x800000

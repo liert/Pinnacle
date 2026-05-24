@@ -50,6 +50,12 @@ def build_parser() -> argparse.ArgumentParser:
     inject.add_argument("--mode", choices=["minimal", "safe", "raw"], default="safe")
     inject.add_argument("--payload-addr", type=parse_int)
     inject.add_argument(
+        "--payload-placement",
+        choices=["auto", "codecave", "segment"],
+        default="auto",
+        help="Where to place trampoline payloads: executable code cave, new executable segment, or auto",
+    )
+    inject.add_argument(
         "--return-mode",
         choices=["jump", "ret", "none"],
         default="jump",
@@ -104,6 +110,7 @@ def cmd_inject(args: argparse.Namespace) -> int:
         mode=args.mode,
         prefer=args.prefer,
         return_mode=args.return_mode,
+        payload_placement=args.payload_placement,
         payload_vaddr=args.payload_addr,
         external_verify=args.external_verify,
         allow_inline_data=args.allow_inline_data,

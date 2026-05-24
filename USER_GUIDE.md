@@ -11,7 +11,7 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 - 通过 PLT 入口查找 `malloc`、`fopen`、`unlink` 等导入函数。
 - 生成调用这些函数的 AArch64 汇编。
 - 汇编自定义 hook 代码。
-- 在可执行 code cave 中放置 payload，并从目标地址跳转到 payload。
+- 在可执行 Section 的 code cave 中放置 payload；如果没有足够空间，可以新增可执行 `PT_LOAD` 段。
 
 ## 推荐流程
 
@@ -61,7 +61,10 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 - `--call`：要调用的函数名。
 - `--prefer imported`：优先使用导入函数 PLT。
 - `--asm`：自定义汇编模板文件。
-- `--strategy trampoline`：从目标地址跳到 code cave 中的 payload。
+- `--strategy trampoline`：从目标地址跳到 payload。
+- `--payload-placement auto`：默认策略，先找可执行 Section 的 code cave，找不到则新增可执行 `PT_LOAD` 段。
+- `--payload-placement codecave`：只允许使用可执行 Section 中的 code cave。
+- `--payload-placement segment`：强制新增可执行 `PT_LOAD` 段放置 payload。
 - `--mode minimal`：由工具包一层较小的函数头和函数尾。
 - `--mode raw`：工具不包装 payload，汇编文件自己负责函数头和函数尾。
 - `--return-mode jump`：payload 末尾跳回原流程。
@@ -72,7 +75,7 @@ Pinnacle 可以在 AArch64 Linux ELF 的指定虚拟地址处插入补丁。它�
 
 ## 让 IDA 更容易识别 payload 为函数
 
-如果希望 IDA 更容易识别 code cave 中的 payload，可以让汇编文件自己写成标准函数形态：
+如果希望 IDA 更容易识别 payload，可以让汇编文件自己写成标准函数形态：
 
 ```asm
 stp x29, x30, [sp, #-16]!
@@ -106,7 +109,7 @@ examples/call_import_malloc.asm
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-如果找不到 code cave，可以手动指定一个可执行 payload 地址：
+如果不希望自动新增可执行段，也可以手动指定一个可执行 payload 地址：
 
 ```powershell
 --payload-addr 0x430c48

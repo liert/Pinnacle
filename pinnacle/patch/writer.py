@@ -21,3 +21,15 @@ def write_binary(elf: ElfBinary, output_path: str | Path) -> None:
         writer(str(output_path))
         return
     raise RuntimeError("LIEF binary object does not support write()")
+
+
+def add_executable_segment(elf: ElfBinary, content: bytes) -> tuple[int, int]:
+    import lief
+
+    segment = lief.ELF.Segment()
+    segment.type = lief.ELF.Segment.TYPE.LOAD
+    segment.flags = lief.ELF.Segment.FLAGS.R | lief.ELF.Segment.FLAGS.X
+    segment.alignment = 0x1000
+    segment.content = list(content)
+    added = elf.binary.add(segment, int(getattr(elf.binary, "next_virtual_address", 0) or 0))
+    return int(added.virtual_address), int(added.file_offset)

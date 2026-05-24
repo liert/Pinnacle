@@ -13,7 +13,7 @@ Pinnacle 是一个 Python 工具，用于规划和应用 AArch64 ELF 调用注�
 - 使用 Keystone 汇编 AArch64 代码。
 - 使用 Capstone 验证补丁反汇编。
 - 支持带伪指令的自定义汇编模板。
-- 支持 trampoline 注入，并自动寻找可执行 code cave。
+- 支持 trampoline 注入，优先寻找可执行 Section 中的 code cave；找不到时可新增 `R|X PT_LOAD` 段放置 payload。
 
 ## 安装
 
@@ -98,6 +98,8 @@ branch_abs 0x402e4c
 `--mode raw` 表示汇编文件自己提供函数头和函数结尾。`--return-mode none` 表示 Pinnacle 不自动追加跳回或 `ret`。
 
 如果汇编中包含 `.asciz` 这类内联数据，需要加上 `--allow-inline-data`，否则 Capstone 会尝试把数据区也当成指令反汇编。
+
+payload 默认放置策略为 `--payload-placement auto`：先找可执行 Section 中的 code cave，避免把代码放进 `.rodata`；如果没有足够空间，则新增一个可执行 `PT_LOAD` 段。也可以显式使用 `--payload-placement segment`。
 
 ## 注意事项
 

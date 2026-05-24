@@ -13,7 +13,7 @@ The tool runs on Windows and Linux. The first supported target format is AArch64
 - AArch64 assembly with Keystone.
 - Patch verification with Capstone.
 - User assembly templates with helper pseudo-instructions.
-- Trampoline patches with code-cave payload placement.
+- Trampoline patches that prefer executable-section code caves and can fall back to a new `R|X PT_LOAD` segment.
 
 ## Install
 
@@ -96,6 +96,8 @@ branch_abs 0x402e4c
 `--mode raw` lets the assembly file provide its own function prologue and epilogue. `--return-mode none` prevents Pinnacle from appending a jump or `ret`.
 
 If the assembly contains inline data such as `.asciz`, pass `--allow-inline-data` so validation does not require the data bytes to disassemble as instructions.
+
+The default placement mode is `--payload-placement auto`: Pinnacle first searches executable sections for a code cave, avoiding `.rodata`; if no suitable cave exists, it creates a new executable `PT_LOAD` segment. Use `--payload-placement segment` to force the new-segment path.
 
 ## Notes
 

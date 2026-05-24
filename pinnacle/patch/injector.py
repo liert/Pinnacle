@@ -12,7 +12,7 @@ from pinnacle.errors import PatchPlanningError
 from pinnacle.model import CallableTarget, PatchPlan, PatchRequest
 from pinnacle.patch.codecave import find_code_cave
 from pinnacle.patch.trampoline import entry_branch_bytes, overwritten_for_entry_branch
-from pinnacle.patch.writer import patch_bytes, write_binary
+from pinnacle.patch.writer import add_executable_segment, patch_bytes, write_binary
 from pinnacle.verify.checks import require_aligned_aarch64
 from pinnacle.verify.disasm import disasm_aarch64, ensure_decodable
 
@@ -40,6 +40,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
     )
     if request.strategy == "overwrite":
         payload_vaddr = request.insert_vaddr
+        payload_added_segment = False
         payload_body = wrap_payload(expanded, request.mode)
         payload_asm = _finish_payload(payload_body, request, None, payload_vaddr)
         payload_bytes = assemble_aarch64(payload_asm, payload_vaddr)
@@ -51,7 +52,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
         overwritten = b""
     else:
         payload_body = wrap_payload(expanded, request.mode)
-        payload_vaddr = _payload_vaddr(elf, request, payload_body)
+        payload_vaddr, payload_added_segment = _payload_location(elf, request, payload_body)
         entry_patch_asm, entry_patch_bytes = entry_branch_bytes(request.insert_vaddr, payload_vaddr)
         ensure_decodable(entry_patch_bytes, request.insert_vaddr)
         overwritten = overwritten_for_entry_branch(elf, request.insert_vaddr, len(entry_patch_bytes))
@@ -72,6 +73,7 @@ def plan_patch(request: PatchRequest) -> PatchPlan:
         payload_bytes=payload_bytes,
         entry_patch_asm=entry_patch_asm,
         entry_patch_bytes=entry_patch_bytes,
+        payload_in_added_segment=payload_added_segment,
     )
 
 
@@ -86,7 +88,14 @@ def apply_patch_plan(request: PatchRequest, plan: PatchPlan) -> None:
     if request.strategy == "overwrite":
         patch_bytes(elf, request.insert_vaddr, plan.entry_patch_bytes)
     else:
-        patch_bytes(elf, plan.payload_vaddr, plan.payload_bytes)
+        if plan.payload_in_added_segment:
+            payload_vaddr, _ = add_executable_segment(elf, plan.payload_bytes)
+            if payload_vaddr != plan.payload_vaddr:
+                raise PatchPlanningError(
+                    f"Added segment VA changed from 0x{plan.payload_vaddr:x} to 0x{payload_vaddr:x}; rerun planning"
+                )
+        else:
+            patch_bytes(elf, plan.payload_vaddr, plan.payload_bytes)
         patch_bytes(elf, request.insert_vaddr, plan.entry_patch_bytes)
     write_binary(elf, request.output_path)
 
@@ -97,18 +106,23 @@ def _resolve_target_if_requested(elf, request: PatchRequest) -> CallableTarget |
     return None
 
 
-def _payload_vaddr(elf, request: PatchRequest, payload_asm: str) -> int:
+def _payload_location(elf, request: PatchRequest, payload_asm: str) -> tuple[int, bool]:
     if request.strategy == "overwrite":
-        return request.insert_vaddr
+        return request.insert_vaddr, False
     if request.payload_vaddr is not None:
         require_aligned_aarch64(request.payload_vaddr)
         require_mapped_executable(elf, request.payload_vaddr)
-        return request.payload_vaddr
+        return request.payload_vaddr, False
     estimated = max(assemble_aarch64(payload_asm, request.insert_vaddr).__len__() + 32, 64)
-    cave = find_code_cave(elf, estimated)
-    if cave is None:
-        raise PatchPlanningError("No code cave found; pass --payload-addr")
-    return cave[0]
+    if request.payload_placement in ("auto", "codecave"):
+        cave = find_code_cave(elf, estimated)
+        if cave is not None:
+            return cave[0], False
+        if request.payload_placement == "codecave":
+            raise PatchPlanningError("No executable section code cave found; pass --payload-placement segment or --payload-addr")
+    dummy = b"\x1f\x20\x03\xd5" * ((estimated + 3) // 4)
+    payload_vaddr, _ = add_executable_segment(elf, dummy)
+    return payload_vaddr, True
 
 
 def _finish_payload(

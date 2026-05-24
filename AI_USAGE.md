@@ -38,7 +38,7 @@ Run tests:
 - `pinnacle/model.py`: shared dataclasses and literal modes.
 - `pinnacle/elf/`: LIEF-backed ELF helpers.
 - `pinnacle/asm/`: AArch64 call generation, template expansion, Keystone wrapper.
-- `pinnacle/patch/`: patch planning, code cave scanning, writing.
+- `pinnacle/patch/`: patch planning, executable-section code cave scanning, executable segment insertion, writing.
 - `pinnacle/verify/`: Capstone disassembly and safety checks.
 - `examples/call_import_malloc.asm`: publishable raw function-shaped hook example.
 
@@ -61,6 +61,7 @@ The public repository intentionally excludes the private development plan and lo
 - `--return-mode none` means do not append a jump or `ret`.
 - `--return-mode jump` is the default trampoline behavior.
 - `--return-mode ret` appends `ret`.
+- `--payload-placement auto` must avoid `.rodata`: use executable-section caves first, then add a new executable `PT_LOAD` segment.
 - `--allow-inline-data` is required for raw payloads containing `.asciz` or other embedded data bytes.
 - Imported calls should resolve to `CallableTarget(kind="imported", call_vaddr=<plt address>)`.
 - Tests that need the local `server` fixture should skip when it is absent.
